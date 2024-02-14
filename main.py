@@ -219,8 +219,9 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                 return f'Программа выполнялась более {timeout} секунд'
         else:
             inp = self.input_pte.toPlainText().strip() + '\n'
-            with subprocess.Popen(['python', '_tmp.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-                try:
+            try:
+                with subprocess.Popen(['python', '_tmp.py'], stdin=subprocess.PIPE,
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
                     outs, errs = proc.communicate(input=inp.encode('utf-8'), timeout=timeout)
                     if outs is not None:
                         self.result_run = outs.decode('utf-8')
@@ -231,9 +232,13 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                     else:
                         self.my_error_txt = ''
                     return self.result_run + '\n' + self.my_error_txt
-                except subprocess.TimeoutExpired:
-                    # proc.kill()
-                    return f'Программа выполнялась более {timeout} секунд'
+            except subprocess.TimeoutExpired:
+                print(proc.stdout.decode('utf-8'))
+                # proc.kill()
+                return f'Программа выполнялась более {timeout} секунд'
+            except subprocess.SubprocessError:
+                print(proc.stderr.decode('utf-8'))
+                return proc.stderr.decode('utf-8')
 
     def check_version(self):
         v = None
@@ -340,7 +345,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
 
     def paste_code(self):
         self.correct_code_pte.clear()
-        self.link_to_task_le.clear()
+        # self.link_to_task_le.clear()
         self.correct_code_pte.appendPlainText(pyperclip.paste())
 
     def paste_explanation(self):
