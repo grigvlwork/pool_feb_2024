@@ -111,6 +111,8 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.toggle_theme_btn.clicked.connect(self.change_theme)
         self.pep8_btn.clicked.connect(self.pep8_correct)
         self.paste_btn.clicked.connect(self.paste_code)
+        self.paste_condition_btn.clicked.connect(self.paste_condition)
+        self.paste_input_btn.clicked.connect(self.paste_input)
         self.paste_explanation_btn.clicked.connect(self.paste_explanation)
         self.correct_tw.currentChanged.connect(self.correct_row_generator)
         self.copy_answer_btn.clicked.connect(self.copy_my_answer)
@@ -200,7 +202,8 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             c.write(text)
         if self.input_pte.toPlainText().strip() == '':
             try:
-                completed_process = subprocess.run(['python', '_tmp.py'], capture_output=True, text=True, timeout=timeout)
+                completed_process = subprocess.run(['python', '_tmp.py'], capture_output=True, text=True,
+                                                   timeout=timeout)
                 if completed_process.returncode == 0:
                     t = completed_process.stdout
                     t = t.encode('cp1251').decode('utf-8')
@@ -279,7 +282,6 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         timeout = self.timeout_sb.value()
         self.output_pte.setPlainText(self.run_text(remove_comments(code), timeout))
 
-
     def explanation_changed(self):
         self.explanation_text = self.explanation_pte.toPlainText()
         self.set_my_answer()
@@ -347,6 +349,14 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.correct_code_pte.clear()
         # self.link_to_task_le.clear()
         self.correct_code_pte.appendPlainText(pyperclip.paste())
+
+    def paste_condition(self):
+        self.condition_pte.clear()
+        self.condition_pte.appendPlainText(pyperclip.paste())
+
+    def paste_input(self):
+        self.input_pte.clear()
+        self.input_pte.appendPlainText(pyperclip.paste())
 
     def paste_explanation(self):
         self.save_btn.setEnabled(False)
