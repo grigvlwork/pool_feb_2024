@@ -218,13 +218,19 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             except subprocess.TimeoutExpired:
                 return f'Программа выполнялась более {timeout} секунд'
         else:
-            with subprocess.Popen(['python', '_tmp.py'],
-                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+            inp = self.input_pte.toPlainText().strip() + '\n'
+            with subprocess.Popen(['python', '_tmp.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
-                    outs, errs = proc.communicate(input=self.input_pte.toPlainText().strip() + '\n', timeout=timeout)
-                    self.result_run = outs
-                    self.my_error_txt = errs
-                    return self.result_run + r'\n' + self.my_error_txt
+                    outs, errs = proc.communicate(input=inp.encode('utf-8'), timeout=timeout)
+                    if outs is not None:
+                        self.result_run = outs.decode('utf-8')
+                    else:
+                        self.result_run = ''
+                    if errs is not None:
+                        self.my_error_txt = errs.decode('utf-8')
+                    else:
+                        self.my_error_txt = ''
+                    return self.result_run + '\n' + self.my_error_txt
                 except subprocess.TimeoutExpired:
                     # proc.kill()
                     return f'Программа выполнялась более {timeout} секунд'
@@ -265,20 +271,9 @@ class MyWidget(QMainWindow, Ui_MainWindow):
 
     def run_correct(self):
         code = self.correct_code_pte.toPlainText()
-        # if self.files is None:
-        #     self.files = Files()
-        # file_name = self.files.get_filename_from_code(code)
-        # if len(file_name) > 0:
-        #     self.prepare_file()
-        code = self.correct_code_pte.toPlainText()
         timeout = self.timeout_sb.value()
-        self.output_pte.setPlainText('Вывод: ' + self.run_text(remove_comments(code), timeout))
-        # self.correct_output_lb.setToolTip(self.result_run)
-        # if len(file_name) > 0:
-        #     try:
-        #         os.remove(os.getcwd() + '/' + file_name)
-        #     except Exception:
-        #         pass
+        self.output_pte.setPlainText(self.run_text(remove_comments(code), timeout))
+
 
     def explanation_changed(self):
         self.explanation_text = self.explanation_pte.toPlainText()
