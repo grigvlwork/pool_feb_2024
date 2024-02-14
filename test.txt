@@ -1,0 +1,14 @@
+a = (input()
+listt = ("Алёнка")
+for k in range(a + 1):
+    if k == a:
+        listt += ["Алёнка"]
+    else:
+        listt += [input()]
+print(listt)
+
+4
+Киндер сюрприз
+Твикс
+Коровка
+Лёвушка
