@@ -236,11 +236,8 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                         self.my_error_txt = ''
                     return self.result_run + '\n' + self.my_error_txt
             except subprocess.TimeoutExpired:
-                print(proc.stdout.decode('utf-8'))
-                # proc.kill()
                 return f'Программа выполнялась более {timeout} секунд'
             except subprocess.SubprocessError:
-                print(proc.stderr.decode('utf-8'))
                 return proc.stderr.decode('utf-8')
 
     def check_version(self):
@@ -364,11 +361,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.explanation_pte.appendPlainText(pyperclip.paste())
 
     def set_my_answer(self):
-        if self.err_cb.isChecked():
-            self.my_answer_pte.setPlainText(f'<my_error>\n{self.my_error_txt}\n</my_error>\n' +
-                                            self.explanation_text)
-        else:
-            self.my_answer_pte.setPlainText(self.explanation_text)
+        self.my_answer_pte.setPlainText(self.explanation_text)
 
 
 def excepthook(exc_type, exc_value, exc_tb):
