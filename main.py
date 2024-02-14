@@ -21,6 +21,7 @@ from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from mainwindow import Ui_MainWindow
 import requests
 import winreg
+import zlib
 from file_proc import Files
 from threading import Thread
 
@@ -114,9 +115,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.correct_tw.currentChanged.connect(self.correct_row_generator)
         self.copy_answer_btn.clicked.connect(self.copy_my_answer)
         self.clear_btn.clicked.connect(self.clear_explanation)
-        self.setWindowTitle(f'Пул январь 2024 {self.check_version()}')
-        self.link_to_task_le.textChanged.connect(self.link_to_task_changed)
-        self.link_pb.clicked.connect(self.insert_link)
+        self.setWindowTitle(f'Пул февраль 2024 {self.check_version()}')
         self.save_btn.clicked.connect(self.save_solution)
         self.answers_tv.clicked.connect(self.select_answer)
         self.copy_in_my_answer_btn.clicked.connect(self.copy_in_my_answer)
@@ -124,36 +123,15 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.my_error_txt = ''
         self.files = None
         self.file_name = None
-        # https://dev.to/ashishpandey/say-goodbye-to-chrome-build-your-own-browser-with-pyqt5-and-python-23ld
+        self.current_condition_id = None
 
     def select_answer(self):
         self.answer = self.linked_answers_model.data(self.answers_tv.selectedIndexes()[0], 0)
         # print(answer)
 
-    def insert_link(self):
-        self.copy_in_my_answer_btn.setEnabled(False)
-        self.link_to_task_le.clear()
-        self.save_btn.setEnabled(False)
-        self.link_to_task_le.setText(pyperclip.paste())
-        self.linked_answers_model.clear()
-        self.answers_tw.setTabVisible(1, False)
-        t = threading.Thread(target=self.load_solutions())
-        t.start()
-        t.join()
-
     def save_solution(self):
-        if len(self.link_to_task_le.text()) == 0:
-            QMessageBox.information(self,
-                                    'Информация', 'Добавьте ссылку на задачу',
-                                    QMessageBox.Ok)
-            return
-        id = self.files.get_id_from_url(self.link_to_task_le.text())
-        if '-' not in id:
-            QMessageBox.information(self,
-                                    'Информация', 'Добавьте ссылку на задачу',
-                                    QMessageBox.Ok)
-            return
-        if self.files.save_solution(self.explanation_pte.toPlainText(), id):
+        self.current_condition_id = hex(zlib.crc32(self.condition_pte.toPlainText().encode('utf-8')) % 2 ** 32)[2:]
+        if self.files.save_solution(self.explanation_pte.toPlainText(), self.current_condition_id):
             QMessageBox.information(self,
                                     'Информация', 'Успешно сохранено',
                                     QMessageBox.Ok)
@@ -162,7 +140,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                                     'Информация', 'Не удалось сохранить',
                                     QMessageBox.Ok)
         try:
-            if self.files.upload_solution(id) == 1:
+            if self.files.upload_solution(self.current_condition_id) == 1:
                 QMessageBox.information(self,
                                         'Информация', 'Успешно загружено на Яндекс-диск',
                                         QMessageBox.Ok)
@@ -217,83 +195,39 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         else:
             self.explanation_pte.setPlainText(self.answer)
 
-    def prepare_file(self):
-        if self.files is None:
-            self.files = Files()
-        code = self.correct_code_pte.toPlainText()
-        file_name = self.files.get_filename_from_code(code)
-        if len(self.link_to_task_le.text()) == 0:
-            if len(file_name) > 0:
-                QMessageBox.information(self,
-                                        'Информация', 'Добавьте ссылку на задачу',
-                                        QMessageBox.Ok)
-            return
-        id = self.files.get_id_from_url(self.link_to_task_le.text())
-        if file_name != '':
-            if self.files.local_files is not None and id in self.files.local_files \
-                    and self.files.get_local_file(id, file_name) == 1:
-                QMessageBox.information(self,
-                                        'Информация', 'Файл скопирован в папку программы',
-                                        QMessageBox.Ok)
-            elif self.files.global_files is not None and id in self.files.global_files \
-                    and self.files.get_global_file(id, file_name) == 1:
-                QMessageBox.information(self,
-                                        'Информация', 'Файл скопирован в папку программы',
-                                        QMessageBox.Ok)
-            else:
-                if QMessageBox.information(self,
-                                           'Информация',
-                                           'Файл не найден в локальных папках и на сетевом диске,\n' +
-                                           ' скачайте его и нажмите ОК для выбора',
-                                           QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Cancel:
-                    return
-                filename = ''
-                while os.path.basename(filename) != file_name:
-                    filename, ok = QFileDialog.getOpenFileName(
-                        None, 'Выбор файла', get_download_path(), 'Файлы данных к задачам (*.txt *.csv)', None
-                    )
-                    if filename is not None and os.path.basename(filename) != file_name:
-                        if QMessageBox.critical(self,
-                                                'Ошибка',
-                                                f'Имя выбранного файла {os.path.basename(filename)} не соответствует\n' +
-                                                f'имени файла в программе {file_name}. Скачайте другой файл',
-                                                QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Cancel:
-                            return
-                        file_name = self.files.get_filename_from_code(code)
-                if filename:
-                    if self.files.save_file(id, filename) == 1:
-                        if self.files.get_local_file(id, os.path.basename(filename)) == 1:
-                            QMessageBox.information(self,
-                                                    'Информация', 'Файл скопирован в папку программы',
-                                                    QMessageBox.Ok)
-
-    def link_to_task_changed(self):
-        if self.files is None:
-            self.files = Files()
-        if len(self.link_to_task_le.text()) > 0:
-            self.prepare_file()
-
     def run_text(self, text, timeout):
         with open('_tmp.py', 'w', encoding='utf-8') as c:
             c.write(text)
-        try:
-            completed_process = subprocess.run(['python', '_tmp.py'], capture_output=True, text=True, timeout=timeout)
-            if completed_process.returncode == 0:
-                t = completed_process.stdout
-                t = t.encode('cp1251').decode('utf-8')
-                self.result_run = t
-                if len(t) > 50:
-                    return t[:50] + '..'
+        if self.input_pte.toPlainText().strip() == '':
+            try:
+                completed_process = subprocess.run(['python', '_tmp.py'], capture_output=True, text=True, timeout=timeout)
+                if completed_process.returncode == 0:
+                    t = completed_process.stdout
+                    t = t.encode('cp1251').decode('utf-8')
+                    self.result_run = t
+                    if len(t) > 50:
+                        return t[:50] + '..'
+                    else:
+                        return t
                 else:
+                    t = completed_process.stderr
+                    t = t.encode('cp1251').decode('utf-8')
+                    self.my_error_txt = t
+                    self.result_run = t
                     return t
-            else:
-                t = completed_process.stderr
-                t = t.encode('cp1251').decode('utf-8')
-                self.my_error_txt = t
-                self.result_run = t
-                return t
-        except subprocess.TimeoutExpired:
-            return f'Программа выполнялась более {timeout} секунд'
+            except subprocess.TimeoutExpired:
+                return f'Программа выполнялась более {timeout} секунд'
+        else:
+            with subprocess.Popen(['python', '_tmp.py'],
+                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    outs, errs = proc.communicate(input=self.input_pte.toPlainText().strip() + '\n', timeout=timeout)
+                    self.result_run = outs
+                    self.my_error_txt = errs
+                    return self.result_run + r'\n' + self.my_error_txt
+                except subprocess.TimeoutExpired:
+                    # proc.kill()
+                    return f'Программа выполнялась более {timeout} секунд'
 
     def check_version(self):
         v = None
@@ -304,7 +238,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             print(str(e))
         if v is not None:
             try:
-                r = requests.get('https://github.com/grigvlwork/pool_jan_24/blob/main/version.txt')
+                r = requests.get('https://github.com/grigvlwork/pool_feb_2024/blob/master/version.txt')
                 new_v = r.text[r.text.find("rawLines") + 12:r.text.find("rawLines") + 17]
                 if v != new_v:
                     QMessageBox.information(self,
@@ -331,20 +265,20 @@ class MyWidget(QMainWindow, Ui_MainWindow):
 
     def run_correct(self):
         code = self.correct_code_pte.toPlainText()
-        if self.files is None:
-            self.files = Files()
-        file_name = self.files.get_filename_from_code(code)
-        if len(file_name) > 0:
-            self.prepare_file()
+        # if self.files is None:
+        #     self.files = Files()
+        # file_name = self.files.get_filename_from_code(code)
+        # if len(file_name) > 0:
+        #     self.prepare_file()
         code = self.correct_code_pte.toPlainText()
         timeout = self.timeout_sb.value()
-        self.correct_output_lb.setText('Вывод: ' + self.run_text(remove_comments(code), timeout))
-        self.correct_output_lb.setToolTip(self.result_run)
-        if len(file_name) > 0:
-            try:
-                os.remove(os.getcwd() + '/' + file_name)
-            except Exception:
-                pass
+        self.output_pte.setPlainText('Вывод: ' + self.run_text(remove_comments(code), timeout))
+        # self.correct_output_lb.setToolTip(self.result_run)
+        # if len(file_name) > 0:
+        #     try:
+        #         os.remove(os.getcwd() + '/' + file_name)
+        #     except Exception:
+        #         pass
 
     def explanation_changed(self):
         self.explanation_text = self.explanation_pte.toPlainText()
