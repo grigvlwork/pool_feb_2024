@@ -352,6 +352,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.correct_code_pte.clear()
         # self.link_to_task_le.clear()
         self.correct_code_pte.appendPlainText(pyperclip.paste())
+        self.timeout_sb.setValue(10)
 
     def paste_condition(self):
         self.condition_pte.clear()
