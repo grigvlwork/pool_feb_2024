@@ -111,14 +111,14 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.toggle_theme_btn.clicked.connect(self.change_theme)
         self.pep8_btn.clicked.connect(self.pep8_correct)
         self.paste_btn.clicked.connect(self.paste_code)
-        self.paste_condition_btn.clicked.connect(self.paste_condition)
+        # self.paste_condition_btn.clicked.connect(self.paste_condition)
         self.paste_input_btn.clicked.connect(self.paste_input)
         self.paste_explanation_btn.clicked.connect(self.paste_explanation)
         self.correct_tw.currentChanged.connect(self.correct_row_generator)
         self.copy_answer_btn.clicked.connect(self.copy_my_answer)
         self.clear_btn.clicked.connect(self.clear_explanation)
         self.setWindowTitle(f'Пул февраль 2024 {self.check_version()}')
-        self.save_btn.clicked.connect(self.save_solution)
+        # self.save_btn.clicked.connect(self.save_solution)
         self.answers_tv.clicked.connect(self.select_answer)
         self.copy_in_my_answer_btn.clicked.connect(self.copy_in_my_answer)
         self.answer = ''
@@ -269,7 +269,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
     def clear_explanation(self):
         self.explanation_text = ''
         self.explanation_pte.clear()
-        self.save_btn.setEnabled(False)
+        # self.save_btn.setEnabled(False)
         # self.link_to_task_le.clear()
 
     def change_theme(self):
@@ -325,7 +325,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if message != QMessageBox.Yes:
                 return
-        self.save_btn.setEnabled(True)
+        # self.save_btn.setEnabled(True)
         pyperclip.copy(self.my_answer_pte.toPlainText())
 
     def correct_row_generator(self):
@@ -363,7 +363,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.input_pte.appendPlainText(pyperclip.paste())
 
     def paste_explanation(self):
-        self.save_btn.setEnabled(False)
+        # self.save_btn.setEnabled(False)
         self.explanation_pte.clear()
         self.explanation_pte.appendPlainText(pyperclip.paste())
 
