@@ -132,6 +132,11 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         # print(answer)
 
     def save_solution(self):
+        if self.condition_pte.toPlainText() == '':
+            QMessageBox.information(self,
+                                    'Информация', 'Добавьте условие задачи',
+                                    QMessageBox.Ok)
+            return
         self.current_condition_id = hex(zlib.crc32(self.condition_pte.toPlainText().encode('utf-8')) % 2 ** 32)[2:]
         if self.files.save_solution(self.explanation_pte.toPlainText(), self.current_condition_id):
             QMessageBox.information(self,
