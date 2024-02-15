@@ -26,15 +26,15 @@ print(*(t for t in ts if t >= 5), sep = '\n')
 2
 3
 
-    виснет
+    не выводит ответ
 
-word=input()
-greens=0
-while word!="стоп":
-    if word=="зеленый":
-        greens= green+ 1
-        word =input()
-        print(greens)
+word = input()
+greens = 0
+while word != "стоп":
+    if word == "зелёный":
+        greens = green + 1
+    word = input()
+print(greens)
 
 красный
 жёлтый

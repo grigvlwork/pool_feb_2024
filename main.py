@@ -233,15 +233,13 @@ class MyWidget(QMainWindow, Ui_MainWindow):
                 outs, errs = proc.communicate(input=inp.encode('utf-8'), timeout=timeout)
                 if outs is not None:
                     self.result_run = outs.decode('utf-8')
-                    return self.result_run
                 else:
                     self.result_run = ''
                 if errs is not None:
                     self.my_error_txt = errs.decode('utf-8')
-                    return self.my_error_txt
                 else:
                     self.my_error_txt = ''
-                return self.result_run + '\n' + self.my_error_txt
+                return (self.result_run + '\n' + self.my_error_txt).strip()
             except subprocess.TimeoutExpired:
                 proc.kill()
                 return f'Программа выполнялась более {timeout} секунд'
